@@ -18,7 +18,7 @@ final class RegistrationViewPresenter {
                 print(token)
                 // Возвращаемся на главный поток для обновления UI
                 await MainActor.run {
-                    delegate?.endSuccessRegistration()
+                    delegate?.endSuccessRegistration(token: token)
                 }
                 
             } catch {

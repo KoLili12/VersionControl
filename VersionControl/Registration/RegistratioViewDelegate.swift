@@ -8,6 +8,6 @@
 import Foundation
 
 protocol RegistrationViewDelegate: AnyObject {
-    func endSuccessRegistration()
+    func endSuccessRegistration(token: String)
     func endErrorRegistration()
 }

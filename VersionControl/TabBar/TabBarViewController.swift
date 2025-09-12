@@ -7,11 +7,27 @@
 
 import UIKit
 
-class TabBarViewController: UIViewController {
+class TabBarViewController: UITabBarController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        let profileVC = ProfileViewController()
+        let objectsVC = ObjectsViewController()
+        let navigationVC = UINavigationController(rootViewController: objectsVC)
+        
+        navigationVC.tabBarItem = UITabBarItem(
+            title: "Обьекты",
+            image: UIImage(systemName: "house"),
+            selectedImage: nil
+        )
+        
+        profileVC.tabBarItem = UITabBarItem(
+            title: "Профиль",
+            image: UIImage(systemName: "person"),
+            selectedImage: nil
+        )
+        
+        viewControllers = [navigationVC, profileVC]
         // Do any additional setup after loading the view.
     }
     

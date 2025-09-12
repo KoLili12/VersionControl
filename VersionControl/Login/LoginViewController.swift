@@ -11,6 +11,7 @@ import ProgressHUD
 final class LoginViewController: UIViewController {
     
     var presenter: LoginViewPresenter?
+    var tokenStorage = TokenStorage()
     
     private lazy var logLabel: UILabel = {
         let view = UILabel()
@@ -165,9 +166,10 @@ extension LoginViewController {
 }
 
 extension LoginViewController: LoginViewDelegate {
-    func endSuccessLogin() {
+    func endSuccessLogin(token: String) {
         ProgressHUD.dismiss()
         let vc = ProfileViewController()
+        tokenStorage.token = token
         vc.modalPresentationStyle = .fullScreen
         present(vc, animated: true)
     }

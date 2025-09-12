@@ -15,10 +15,8 @@ final class LoginViewPresenter {
         Task {
             do {
                 let token = try await authService.login(email: email, password: password)
-                print(token)
-                // Возвращаемся на главный поток для обновления UI
                 await MainActor.run {
-                    delegate?.endSuccessLogin()
+                    delegate?.endSuccessLogin(token: token)
                 }
                 
             } catch {

@@ -320,7 +320,7 @@ class RegistrationViewController: UIViewController {
 }
 
 extension RegistrationViewController: RegistrationViewDelegate {
-    func endSuccessRegistration() {
+    func endSuccessRegistration(token: String) {
         ProgressHUD.dismiss()
         let vc = ProfileViewController()
         vc.modalPresentationStyle = .fullScreen

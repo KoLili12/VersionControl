@@ -8,6 +8,6 @@
 import Foundation
 
 protocol LoginViewDelegate: AnyObject {
-    func endSuccessLogin()
+    func endSuccessLogin(token: String)
     func endErrorLogin()
 }
