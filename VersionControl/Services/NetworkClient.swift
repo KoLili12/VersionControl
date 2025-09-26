@@ -246,66 +246,109 @@ final class NetworkClient {
     }
 }
 
-// MARK: - Usage Examples
+// MARK: - NetworkClient Extension для загрузки файлов
 
-/*
-// Example models
-struct User: Codable {
-    let id: Int
-    let name: String
-    let email: String
-}
-
-struct CreateUserRequest: Codable {
-    let name: String
-    let email: String
-}
-
-// Usage examples:
-class NetworkService {
-    private let client = NetworkClient(baseURL: "https://api.example.com")
+extension NetworkClient {
     
-    // GET request example
-    func getUser(id: Int) async throws -> User {
-        return try await client.get(
-            endpoint: "users/\(id)",
-            responseType: User.self
-        )
-    }
-    
-    // POST request example
-    func createUser(name: String, email: String) async throws -> User {
-        let parameters: [String: Any] = [
-            "name": name,
-            "email": email
-        ]
+    // Структура для файла
+    struct FileUpload {
+        let data: Data
+        let filename: String
+        let mimeType: String
         
-        return try await client.post(
-            endpoint: "users",
+        init(data: Data, filename: String, mimeType: String = "image/jpeg") {
+            self.data = data
+            self.filename = filename
+            self.mimeType = mimeType
+        }
+    }
+    
+    // Загрузка файлов с multipart/form-data
+    func uploadFiles<T: Codable>(
+        endpoint: String,
+        files: [FileUpload],
+        parameters: [String: String] = [:],
+        headers: [String: String]? = nil,
+        responseType: T.Type
+    ) async throws -> T {
+        
+        let url = try buildURL(endpoint: endpoint)
+        var request = URLRequest(url: url)
+        
+        // Создаем boundary для multipart
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        // Добавляем headers (например Authorization)
+        headers?.forEach { key, value in
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        // Создаем multipart body
+        var body = Data()
+        
+        // 1. Добавляем text параметры (entity_type, entity_id, etc.)
+        for (key, value) in parameters {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(value)\r\n".data(using: .utf8)!)
+        }
+        
+        // 2. Добавляем файлы
+        for file in files {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"files\"; filename=\"\(file.filename)\"\r\n".data(using: .utf8)!)
+            body.append("Content-Type: \(file.mimeType)\r\n\r\n".data(using: .utf8)!)
+            body.append(file.data)
+            body.append("\r\n".data(using: .utf8)!)
+        }
+        
+        // 3. Закрываем boundary
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        
+        request.httpBody = body
+        
+        // Выполняем запрос
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            // Проверяем HTTP статус
+            if let httpResponse = response as? HTTPURLResponse {
+                guard 200...299 ~= httpResponse.statusCode else {
+                    throw NetworkError.httpError(httpResponse.statusCode)
+                }
+            }
+            
+            // Декодируем ответ
+            do {
+                let decodedData = try JSONDecoder().decode(T.self, from: data)
+                return decodedData
+            } catch {
+                throw NetworkError.decodingError(error)
+            }
+            
+        } catch let error as NetworkError {
+            throw error
+        } catch {
+            throw NetworkError.networkError(error)
+        }
+    }
+    
+    // Convenience метод для загрузки одного файла
+    func uploadFile<T: Codable>(
+        endpoint: String,
+        file: FileUpload,
+        parameters: [String: String] = [:],
+        headers: [String: String]? = nil,
+        responseType: T.Type
+    ) async throws -> T {
+        return try await uploadFiles(
+            endpoint: endpoint,
+            files: [file],
             parameters: parameters,
-            responseType: User.self
-        )
-    }
-    
-    // GET with query parameters
-    func getUsers(page: Int, limit: Int) async throws -> [User] {
-        return try await client.get(
-            endpoint: "users",
-            parameters: [
-                "page": page,
-                "limit": limit
-            ],
-            responseType: [User].self
-        )
-    }
-    
-    // With custom headers
-    func getAuthenticatedUser(token: String) async throws -> User {
-        return try await client.get(
-            endpoint: "user/profile",
-            headers: ["Authorization": "Bearer \(token)"],
-            responseType: User.self
+            headers: headers,
+            responseType: responseType
         )
     }
 }
-*/

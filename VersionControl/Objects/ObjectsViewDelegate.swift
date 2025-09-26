@@ -6,3 +6,11 @@
 //
 
 import Foundation
+
+protocol ObjectsViewDelegate: AnyObject {
+    func updateTableView()
+}
+
+protocol ObjectsViewUpdateDelegate: AnyObject {
+    func updateData()
+}

@@ -34,6 +34,7 @@ final class SplashScreenViewController: UIViewController {
         super.viewDidAppear(animated)
         if let token = storage.token {
             switchToStartScreen()
+            print(token)
         } else {
             let vc = PresentationViewController()
             vc.modalPresentationStyle = .fullScreen

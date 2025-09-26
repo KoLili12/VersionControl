@@ -6,3 +6,21 @@
 //
 
 import Foundation
+
+final class AddObjectViewPresenter {
+    weak var delegate: AddObjectDelegate?
+    private let objectsService = ObjectsService()
+    
+    func addObject(object: ObjectForRequest, photo: Data?) {
+        Task {
+            do {
+                let response = try await objectsService.addObject(object: object, photo: photo)
+                await MainActor.run {
+                    self.delegate?.objectDidAdd()
+                }
+            } catch {
+                print("Ошибка при добавлении объекта")
+            }
+        }
+    }
+}

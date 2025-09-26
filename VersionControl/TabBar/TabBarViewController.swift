@@ -12,7 +12,11 @@ class TabBarViewController: UITabBarController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let profileVC = ProfileViewController()
+        
         let objectsVC = ObjectsViewController()
+        let objectsVCPresenter = ObjectsViewPresenter()
+        objectsVC.presenter = objectsVCPresenter
+        objectsVCPresenter.delegate = objectsVC
         let navigationVC = UINavigationController(rootViewController: objectsVC)
         
         navigationVC.tabBarItem = UITabBarItem(
