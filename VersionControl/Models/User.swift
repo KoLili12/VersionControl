@@ -12,6 +12,10 @@ struct LoginResponse: Codable {
    let user: User
 }
 
+struct GetUserResponse: Codable {
+    let user: User
+}
+
 // MARK: - User Model
 struct User: Codable {
    let email: String
