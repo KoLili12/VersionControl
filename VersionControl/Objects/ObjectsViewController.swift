@@ -30,7 +30,6 @@ class ObjectsViewController: UIViewController {
         tableView.separatorStyle = .none
         tableView.register(ObjectTableViewCell.self, forCellReuseIdentifier: "cell")
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.allowsSelection = false // Отключаем выделение ячеек
         return tableView
     }()
 
@@ -127,6 +126,16 @@ extension ObjectsViewController: UITableViewDelegate, UITableViewDataSource {
         }
         
         return configuration
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard let object = presenter?.getObject(at: indexPath.section) else {
+            assertionFailure("Не удалось извлечь объект")
+            return
+        }
+        let vc = ObjectViewController(object: object)
+        navigationController?.pushViewController(vc, animated: true)
     }
 }
 

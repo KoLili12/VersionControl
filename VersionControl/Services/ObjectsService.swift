@@ -60,4 +60,12 @@ final class ObjectsService {
         }
         
         return response.message
-    }}
+    }
+    
+    func deleteObject(object: ObjectForRequest, photo: Data?) async throws -> String {
+        
+    }
+    
+    
+    
+}
