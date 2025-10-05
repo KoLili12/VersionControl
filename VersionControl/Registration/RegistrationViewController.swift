@@ -8,7 +8,7 @@
 import UIKit
 import ProgressHUD
 
-class RegistrationViewController: UIViewController {
+final class RegistrationViewController: UIViewController {
     var presenter: RegistrationViewPresenter?
     
     private lazy var backButton: UIButton = {

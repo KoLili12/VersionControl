@@ -7,20 +7,15 @@
 
 import UIKit
 import Kingfisher
-
-// MARK: - Defect Model (Mock)
-struct Defect {
-    let id: Int
-    let author: String
-    let text: String
-    let date: Date
-    let avatarURL: String?
-}
+import Combine
+import Foundation
 
 class ObjectViewController: UIViewController {
     
+    private var cancellables = Set<AnyCancellable>()
+    var presenter: ObjectViewPresenter?
+    
     private var object: Object
-    private var mockDefects: [Defect] = []
     
     // MARK: - UI Elements
     private lazy var scrollView: UIScrollView = {
@@ -79,33 +74,162 @@ class ObjectViewController: UIViewController {
         return label
     }()
     
+    // MARK: - Info Cards
+    private lazy var infoStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .vertical
+        stackView.spacing = 12
+        return stackView
+    }()
+    
+    private lazy var addressCardView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemBackground
+        view.layer.cornerRadius = 12
+        return view
+    }()
+    
+    private lazy var addressStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .horizontal
+        stackView.spacing = 12
+        stackView.alignment = .center
+        return stackView
+    }()
+    
+    private lazy var addressIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "location.fill")
+        imageView.tintColor = .systemBlue
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+    
     private lazy var addressLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 16)
+        label.font = .systemFont(ofSize: 16, weight: .medium)
         label.textColor = .label
         label.numberOfLines = 0
         return label
     }()
     
-    private lazy var datesLabel: UILabel = {
+    private lazy var datesCardView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemBackground
+        view.layer.cornerRadius = 12
+        return view
+    }()
+    
+    private lazy var datesStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .vertical
+        stackView.spacing = 8
+        return stackView
+    }()
+    
+    private lazy var startDateStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .horizontal
+        stackView.spacing = 12
+        stackView.alignment = .center
+        return stackView
+    }()
+    
+    private lazy var startDateIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "play.circle.fill")
+        imageView.tintColor = .systemGreen
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+    
+    private lazy var startDateLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 14)
-        label.textColor = .secondaryLabel
-        label.numberOfLines = 0
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.textColor = .label
         return label
+    }()
+    
+    private lazy var endDateStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .horizontal
+        stackView.spacing = 12
+        stackView.alignment = .center
+        return stackView
+    }()
+    
+    private lazy var endDateIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "stop.circle.fill")
+        imageView.tintColor = .systemRed
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+    
+    private lazy var endDateLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.textColor = .label
+        return label
+    }()
+    
+    private lazy var creatorCardView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemBackground
+        view.layer.cornerRadius = 12
+        return view
+    }()
+    
+    private lazy var creatorStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .horizontal
+        stackView.spacing = 12
+        stackView.alignment = .center
+        return stackView
+    }()
+    
+    private lazy var creatorIconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.image = UIImage(systemName: "person.circle.fill")
+        imageView.tintColor = .systemPurple
+        imageView.contentMode = .scaleAspectFit
+        return imageView
     }()
     
     private lazy var creatorLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 16)
+        label.font = .systemFont(ofSize: 16, weight: .medium)
         label.textColor = .label
         return label
     }()
     
-    private lazy var defectsHeaderLabel: UILabel = {
+    // MARK: - Defects Section
+    private lazy var defectsSectionView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemBackground
+        view.layer.cornerRadius = 12
+        return view
+    }()
+    
+    private lazy var defectsTitleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: 20, weight: .semibold)
@@ -114,31 +238,45 @@ class ObjectViewController: UIViewController {
         return label
     }()
     
-    private lazy var addDefectButton: UIButton = {
+    private lazy var viewAllDefectsButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle("Добавить комментарий", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .systemBlue
-        button.layer.cornerRadius = 8
+        button.setTitle("Смотреть все", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        button.addTarget(self, action: #selector(addDefectTapped), for: .touchUpInside)
+        button.setTitleColor(.systemBlue, for: .normal)
         return button
     }()
     
-    private lazy var defectsStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .vertical
-        stackView.spacing = 16
-        return stackView
+    private lazy var defectsTableView: UITableView = {
+        let tableView = UITableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.isScrollEnabled = false
+        tableView.register(DefectTableViewCell.self, forCellReuseIdentifier: DefectTableViewCell.identifier)
+        return tableView
     }()
+    
+    private lazy var noDefectsLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 16)
+        label.textColor = .secondaryLabel
+        label.text = "Дефектов не найдено"
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+    
+    // Массив для хранения дефектов
+    private var defects: [Defect] = []
     
     // MARK: - Initialization
     init(object: Object) {
         self.object = object
         super.init(nibName: nil, bundle: nil)
-        generateMockDefects()
     }
     
     required init?(coder: NSCoder) {
@@ -150,6 +288,26 @@ class ObjectViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupData()
+        setupBindings()
+        presenter?.fetchDefects(idObject: object.id)
+    }
+    
+    private func setupBindings() {
+        presenter?.$defects
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] defects in
+                self?.defects = Array(defects.prefix(10)) // Показываем только первые 10 дефектов
+                self?.updateDefectsUI()
+            }
+            .store(in: &cancellables)
+        
+        presenter?.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                // Показать/скрыть индикатор загрузки
+                print("Loading: \(isLoading)")
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Setup
@@ -175,12 +333,43 @@ class ObjectViewController: UIViewController {
         contentView.addSubview(statusBadge)
         statusBadge.addSubview(statusLabel)
         contentView.addSubview(descriptionLabel)
-        contentView.addSubview(addressLabel)
-        contentView.addSubview(datesLabel)
-        contentView.addSubview(creatorLabel)
-        contentView.addSubview(defectsHeaderLabel)
-        contentView.addSubview(addDefectButton)
-        contentView.addSubview(defectsStackView)
+        contentView.addSubview(infoStackView)
+        contentView.addSubview(defectsSectionView)
+        
+        // Setup info cards
+        setupInfoCards()
+        
+        // Добавляем элементы секции дефектов
+        defectsSectionView.addSubview(defectsTitleLabel)
+        defectsSectionView.addSubview(viewAllDefectsButton)
+        defectsSectionView.addSubview(defectsTableView)
+        defectsSectionView.addSubview(noDefectsLabel)
+    }
+    
+    private func setupInfoCards() {
+        // Address Card
+        infoStackView.addArrangedSubview(addressCardView)
+        addressCardView.addSubview(addressStackView)
+        addressStackView.addArrangedSubview(addressIconView)
+        addressStackView.addArrangedSubview(addressLabel)
+        
+        // Dates Card
+        infoStackView.addArrangedSubview(datesCardView)
+        datesCardView.addSubview(datesStackView)
+        datesStackView.addArrangedSubview(startDateStackView)
+        datesStackView.addArrangedSubview(endDateStackView)
+        
+        startDateStackView.addArrangedSubview(startDateIconView)
+        startDateStackView.addArrangedSubview(startDateLabel)
+        
+        endDateStackView.addArrangedSubview(endDateIconView)
+        endDateStackView.addArrangedSubview(endDateLabel)
+        
+        // Creator Card
+        infoStackView.addArrangedSubview(creatorCardView)
+        creatorCardView.addSubview(creatorStackView)
+        creatorStackView.addArrangedSubview(creatorIconView)
+        creatorStackView.addArrangedSubview(creatorLabel)
     }
     
     private func setupConstraints() {
@@ -226,37 +415,66 @@ class ObjectViewController: UIViewController {
             descriptionLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             descriptionLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             
-            // Address Label
-            addressLabel.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 16),
-            addressLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            addressLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            // Info Stack View
+            infoStackView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 20),
+            infoStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            infoStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             
-            // Dates Label
-            datesLabel.topAnchor.constraint(equalTo: addressLabel.bottomAnchor, constant: 12),
-            datesLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            datesLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            // Address Card constraints
+            addressStackView.topAnchor.constraint(equalTo: addressCardView.topAnchor, constant: 16),
+            addressStackView.leadingAnchor.constraint(equalTo: addressCardView.leadingAnchor, constant: 16),
+            addressStackView.trailingAnchor.constraint(equalTo: addressCardView.trailingAnchor, constant: -16),
+            addressStackView.bottomAnchor.constraint(equalTo: addressCardView.bottomAnchor, constant: -16),
             
-            // Creator Label
-            creatorLabel.topAnchor.constraint(equalTo: datesLabel.bottomAnchor, constant: 12),
-            creatorLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            creatorLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            addressIconView.widthAnchor.constraint(equalToConstant: 24),
+            addressIconView.heightAnchor.constraint(equalToConstant: 24),
             
-            // Defects Header
-            defectsHeaderLabel.topAnchor.constraint(equalTo: creatorLabel.bottomAnchor, constant: 32),
-            defectsHeaderLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            defectsHeaderLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            // Dates Card constraints
+            datesStackView.topAnchor.constraint(equalTo: datesCardView.topAnchor, constant: 16),
+            datesStackView.leadingAnchor.constraint(equalTo: datesCardView.leadingAnchor, constant: 16),
+            datesStackView.trailingAnchor.constraint(equalTo: datesCardView.trailingAnchor, constant: -16),
+            datesStackView.bottomAnchor.constraint(equalTo: datesCardView.bottomAnchor, constant: -16),
             
-            // Add Defect Button
-            addDefectButton.topAnchor.constraint(equalTo: defectsHeaderLabel.bottomAnchor, constant: 16),
-            addDefectButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            addDefectButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            addDefectButton.heightAnchor.constraint(equalToConstant: 48),
+            startDateIconView.widthAnchor.constraint(equalToConstant: 24),
+            startDateIconView.heightAnchor.constraint(equalToConstant: 24),
+            endDateIconView.widthAnchor.constraint(equalToConstant: 24),
+            endDateIconView.heightAnchor.constraint(equalToConstant: 24),
             
-            // Defects Stack View
-            defectsStackView.topAnchor.constraint(equalTo: addDefectButton.bottomAnchor, constant: 16),
-            defectsStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            defectsStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            defectsStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
+            // Creator Card constraints
+            creatorStackView.topAnchor.constraint(equalTo: creatorCardView.topAnchor, constant: 16),
+            creatorStackView.leadingAnchor.constraint(equalTo: creatorCardView.leadingAnchor, constant: 16),
+            creatorStackView.trailingAnchor.constraint(equalTo: creatorCardView.trailingAnchor, constant: -16),
+            creatorStackView.bottomAnchor.constraint(equalTo: creatorCardView.bottomAnchor, constant: -16),
+            
+            creatorIconView.widthAnchor.constraint(equalToConstant: 24),
+            creatorIconView.heightAnchor.constraint(equalToConstant: 24),
+            
+            // Defects Section
+            defectsSectionView.topAnchor.constraint(equalTo: infoStackView.bottomAnchor, constant: 24),
+            defectsSectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            defectsSectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            defectsSectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
+            
+            // Defects Title
+            defectsTitleLabel.topAnchor.constraint(equalTo: defectsSectionView.topAnchor, constant: 16),
+            defectsTitleLabel.leadingAnchor.constraint(equalTo: defectsSectionView.leadingAnchor, constant: 16),
+            
+            // View All Button
+            viewAllDefectsButton.centerYAnchor.constraint(equalTo: defectsTitleLabel.centerYAnchor),
+            viewAllDefectsButton.trailingAnchor.constraint(equalTo: defectsSectionView.trailingAnchor, constant: -16),
+            viewAllDefectsButton.leadingAnchor.constraint(greaterThanOrEqualTo: defectsTitleLabel.trailingAnchor, constant: 8),
+            
+            // Defects Table View
+            defectsTableView.topAnchor.constraint(equalTo: defectsTitleLabel.bottomAnchor, constant: 12),
+            defectsTableView.leadingAnchor.constraint(equalTo: defectsSectionView.leadingAnchor),
+            defectsTableView.trailingAnchor.constraint(equalTo: defectsSectionView.trailingAnchor),
+            defectsTableView.bottomAnchor.constraint(equalTo: defectsSectionView.bottomAnchor, constant: -16),
+            
+            // No Defects Label
+            noDefectsLabel.centerXAnchor.constraint(equalTo: defectsSectionView.centerXAnchor),
+            noDefectsLabel.centerYAnchor.constraint(equalTo: defectsTableView.centerYAnchor),
+            noDefectsLabel.leadingAnchor.constraint(equalTo: defectsSectionView.leadingAnchor, constant: 16),
+            noDefectsLabel.trailingAnchor.constraint(equalTo: defectsSectionView.trailingAnchor, constant: -16)
         ])
     }
     
@@ -264,25 +482,76 @@ class ObjectViewController: UIViewController {
         // Setup object data
         nameLabel.text = object.name
         descriptionLabel.text = object.description
-        addressLabel.text = "📍 \(object.address)"
+        addressLabel.text = object.address
         
         // Setup status
         setupStatusBadge()
         
-        // Setup dates
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium
-        datesLabel.text = "📅 Начало: \(object.startDate)\n📅 Окончание: \(object.endDate)"
+        // Setup formatted dates
+        startDateLabel.text = "Начало: \(formatDate(object.startDate))"
+        endDateLabel.text = "Окончание: \(formatDate(object.endDate))"
         
         // Setup creator
         let creator = object.creator
-        creatorLabel.text = "👤 Создатель: \(creator.firstName) \(creator.lastName)"
+        creatorLabel.text = "\(creator.firstName) \(creator.lastName)"
         
         // Load object image with ImageService
         loadObjectImage()
+    }
+    
+    private func formatDate(_ dateString: String) -> String {
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         
-        // Setup defects
-        setupDefects()
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "dd MMMM yyyy, HH:mm"
+        outputFormatter.locale = Locale(identifier: "ru_RU")
+        
+        if let date = inputFormatter.date(from: dateString) {
+            return outputFormatter.string(from: date)
+        }
+        
+        // Fallback для других форматов
+        let alternativeFormatter = DateFormatter()
+        alternativeFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        
+        if let date = alternativeFormatter.date(from: dateString) {
+            return outputFormatter.string(from: date)
+        }
+        
+        // Если не удалось распарсить, возвращаем исходную строку
+        return dateString
+    }
+    
+    private func updateDefectsUI() {
+        if defects.isEmpty {
+            defectsTableView.isHidden = true
+            noDefectsLabel.isHidden = false
+        } else {
+            defectsTableView.isHidden = false
+            noDefectsLabel.isHidden = true
+            defectsTableView.reloadData()
+            
+            // Обновляем высоту таблицы в зависимости от количества дефектов
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                let cellHeight: CGFloat = 110
+                let tableHeight = CGFloat(self.defects.count) * cellHeight
+                
+                // Удаляем старое ограничение высоты, если оно есть
+                self.defectsTableView.constraints.forEach { constraint in
+                    if constraint.firstAttribute == .height {
+                        constraint.isActive = false
+                    }
+                }
+                
+                // Добавляем новое ограничение высоты
+                self.defectsTableView.heightAnchor.constraint(equalToConstant: tableHeight).isActive = true
+                
+                // Обновляем layout
+                self.view.layoutIfNeeded()
+            }
+        }
     }
     
     private func setupStatusBadge() {
@@ -310,156 +579,40 @@ class ObjectViewController: UIViewController {
     private func loadObjectImage() {
         ImageService.shared.loadImage(
             for: objectImageView,
-            from: "http://localhost:8080/api/v1/files/\(object.id)",
+            from: "http://localhost:8080/api/v1/projects/\(object.id)/image",
             placeholder: UIImage(systemName: "photo")
         )
     }
-    
-    private func generateMockDefects() {
-        let mockAuthors = ["Иван Петров", "Мария Сидорова", "Алексей Козлов", "Елена Смирнова", "Дмитрий Волков"]
-        let mockTexts = [
-            "Обнаружена трещина в стене на втором этаже.",
-            "Некачественная покраска в комнате №15.",
-            "Неровности на полу в коридоре.",
-            "Проблемы с электропроводкой в левом крыле.",
-            "Протечка в потолке главного холла.",
-            "Дефект штукатурки на внешней стене здания."
-        ]
-        
-        mockDefects = (1...5).map { index in
-            Defect(
-                id: index,
-                author: mockAuthors.randomElement() ?? "Аноним",
-                text: mockTexts.randomElement() ?? "Дефект",
-                date: Date().addingTimeInterval(-Double.random(in: 0...7*24*60*60)), // Last week
-                avatarURL: nil
-            )
-        }.sorted { $0.date > $1.date }
+}
+
+// MARK: - UITableViewDataSource
+extension ObjectViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return defects.count
     }
     
-    private func setupDefects() {
-        // Clear existing defects
-        defectsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        
-        // Add mock defects
-        for defect in mockDefects {
-            let defectView = createDefectView(for: defect)
-            defectsStackView.addArrangedSubview(defectView)
-        }
-    }
-    
-    private func createDefectView(for defect: Defect) -> UIView {
-        let containerView = UIView()
-        containerView.backgroundColor = .systemRed.withAlphaComponent(0.1)
-        containerView.layer.cornerRadius = 12
-        containerView.layer.borderWidth = 1
-        containerView.layer.borderColor = UIColor.systemRed.withAlphaComponent(0.3).cgColor
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        
-        let authorLabel = UILabel()
-        authorLabel.font = .systemFont(ofSize: 16, weight: .medium)
-        authorLabel.textColor = .label
-        authorLabel.text = defect.author
-        authorLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        let dateLabel = UILabel()
-        dateLabel.font = .systemFont(ofSize: 12)
-        dateLabel.textColor = .secondaryLabel
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        dateLabel.text = formatter.string(from: defect.date)
-        dateLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        let textLabel = UILabel()
-        textLabel.font = .systemFont(ofSize: 14)
-        textLabel.textColor = .label
-        textLabel.numberOfLines = 0
-        textLabel.text = defect.text
-        textLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Add defect icon
-        let defectIcon = UILabel()
-        defectIcon.text = "⚠️"
-        defectIcon.font = .systemFont(ofSize: 16)
-        defectIcon.translatesAutoresizingMaskIntoConstraints = false
-        
-        containerView.addSubview(defectIcon)
-        containerView.addSubview(authorLabel)
-        containerView.addSubview(dateLabel)
-        containerView.addSubview(textLabel)
-        
-        NSLayoutConstraint.activate([
-            defectIcon.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            defectIcon.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            
-            authorLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            authorLabel.leadingAnchor.constraint(equalTo: defectIcon.trailingAnchor, constant: 8),
-            authorLabel.trailingAnchor.constraint(lessThanOrEqualTo: dateLabel.leadingAnchor, constant: -8),
-            
-            dateLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            dateLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            
-            textLabel.topAnchor.constraint(equalTo: authorLabel.bottomAnchor, constant: 8),
-            textLabel.leadingAnchor.constraint(equalTo: defectIcon.trailingAnchor, constant: 8),
-            textLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            textLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12)
-        ])
-        
-        return containerView
-    }
-    
-    @objc private func addDefectTapped() {
-        let alert = UIAlertController(title: "Добавить комментарий", message: "Опишите обнаруженный дефект", preferredStyle: .alert)
-        
-        alert.addTextField { textField in
-            textField.placeholder = "Описание дефекта..."
-            textField.autocapitalizationType = .sentences
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: DefectTableViewCell.identifier, for: indexPath) as? DefectTableViewCell else {
+            return UITableViewCell()
         }
         
-        let addAction = UIAlertAction(title: "Добавить", style: .default) { [weak self] _ in
-            guard let textField = alert.textFields?.first,
-                  let text = textField.text,
-                  !text.isEmpty else { return }
-            
-            self?.addNewDefect(text: text)
-        }
-        
-        let cancelAction = UIAlertAction(title: "Отмена", style: .cancel)
-        
-        alert.addAction(addAction)
-        alert.addAction(cancelAction)
-        
-        present(alert, animated: true)
-    }
-    
-    private func addNewDefect(text: String) {
-        let newDefect = Defect(
-            id: mockDefects.count + 1,
-            author: "Текущий пользователь", // Replace with actual current user
-            text: text,
-            date: Date(),
-            avatarURL: nil
-        )
-        
-        mockDefects.insert(newDefect, at: 0) // Add to the beginning
-        
-        // Add new defect view to the beginning of the stack
-        let defectView = createDefectView(for: newDefect)
-        defectsStackView.insertArrangedSubview(defectView, at: 0)
-        
-        // Animate the addition
-        defectView.alpha = 0
-        defectView.transform = CGAffineTransform(translationX: 0, y: -20)
-        
-        UIView.animate(withDuration: 0.3) {
-            defectView.alpha = 1
-            defectView.transform = .identity
-        }
-        
-        // Scroll to show the new defect
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.scrollView.scrollRectToVisible(defectView.frame, animated: true)
-        }
+        let defect = defects[indexPath.row]
+        cell.configure(with: defect)
+        return cell
     }
 }
+
+// MARK: - UITableViewDelegate
+extension ObjectViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 110
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        // Здесь можно добавить навигацию к детальному экрану дефекта
+        let defect = defects[indexPath.row]
+        print("Selected defect: \(defect.title)")
+    }
+}
+

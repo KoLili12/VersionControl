@@ -62,8 +62,20 @@ final class ObjectsService {
         return response.message
     }
     
-    func deleteObject(object: ObjectForRequest, photo: Data?) async throws -> String {
+    func deleteObject(objectID: Int) async throws -> String {
+        guard let token = tokenStorage.token else {
+            throw NetworkError.httpError(401)
+        }
         
+        let endpoint = "api/v1/projects/\(objectID)"
+        
+        let response = try await client.delete(
+            endpoint: endpoint,
+            headers: ["Authorization": "Bearer \(token)"],
+            responseType: DeleteObjectResponse.self
+        )
+        
+        return response.message
     }
     
     

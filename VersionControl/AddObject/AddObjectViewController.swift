@@ -8,7 +8,7 @@
 import UIKit
 import ProgressHUD
 
-class AddObjectViewController: UIViewController {
+final class AddObjectViewController: UIViewController {
     
     var presenter: AddObjectViewPresenter?
     var delegateForUpdate: ObjectsViewUpdateDelegate?

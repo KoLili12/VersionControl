@@ -8,7 +8,7 @@
 import UIKit
 import Kingfisher
 
-class ObjectsViewController: UIViewController {
+final class ObjectsViewController: UIViewController {
     var presenter: ObjectsViewPresenter?
     
     lazy private var labelObjects: UILabel = {
@@ -51,12 +51,24 @@ class ObjectsViewController: UIViewController {
     
     @objc private func addButtonTapped() {
         // Пустая функция для кнопки "+"
-        let vc = AddObjectViewController()
-        let presenterVc = AddObjectViewPresenter()
-        vc.presenter = presenterVc
-        presenterVc.delegate = vc
-        vc.delegateForUpdate = self
-        navigationController?.pushViewController(vc, animated: true)
+        Task {
+            let user = try await UserStorage.shared.getUser()
+            await MainActor.run {
+                if user?.role.code ?? "" == "manager" {
+                    let vc = AddObjectViewController()
+                    let presenterVc = AddObjectViewPresenter()
+                    vc.presenter = presenterVc
+                    presenterVc.delegate = vc
+                    vc.delegateForUpdate = self
+                    navigationController?.pushViewController(vc, animated: true)
+                } else {
+                    let alert = UIAlertController(title: "У вас нет прав", message: nil, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+                    present(alert, animated: true)
+                }
+            }
+        }
+
     }
     
     private func setupConstraints() {
@@ -79,12 +91,16 @@ extension ObjectsViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as? ObjectTableViewCell
-        cell?.objectLabel.text = presenter?.getObject(at: indexPath.section).name ?? ""
-        ImageService.shared.loadImage(
-            for: cell?.objectsImageView ?? UIImageView(),
-            from: "http://localhost:8080/api/v1/files/\(presenter?.getObject(at: indexPath.section).id ?? -1)",
-            placeholder: UIImage(resource: .mock)
-        )
+        
+        if let object = presenter?.getObject(at: indexPath.section) {
+            cell?.configure(with: object)
+            ImageService.shared.loadImage(
+                for: cell?.objectsImageView ?? UIImageView(),
+                from: "http://localhost:8080/api/v1/projects/\(object.id)/image",
+                placeholder: UIImage(resource: .mock)
+            )
+        }
+        
         return cell ?? UITableViewCell()
     }
     
@@ -102,7 +118,7 @@ extension ObjectsViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 200 // Или любая нужная высота
+        return 140 // Увеличиваем высоту для отображения всей информации
     }
     
     // Контекстное меню для каждой ячейки
@@ -118,7 +134,7 @@ extension ObjectsViewController: UITableViewDelegate, UITableViewDataSource {
             let deleteAction = UIAction(title: "Удалить", 
                                       image: UIImage(systemName: "trash"),
                                       attributes: .destructive) { action in
-                // Здесь будет логика удаления
+                self.presenter?.deleteObject(at: indexPath.section)
                 print("Удалить объект в секции \(indexPath.section)")
             }
             
@@ -135,6 +151,8 @@ extension ObjectsViewController: UITableViewDelegate, UITableViewDataSource {
             return
         }
         let vc = ObjectViewController(object: object)
+        let pr = ObjectViewPresenter()
+        vc.presenter = pr
         navigationController?.pushViewController(vc, animated: true)
     }
 }

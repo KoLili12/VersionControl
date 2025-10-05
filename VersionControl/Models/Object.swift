@@ -28,6 +28,10 @@ struct CreateObjectResponse: Codable {
     }
 }
 
+struct DeleteObjectResponse: Codable {
+    let message: String
+}
+
 struct UploadedFilesResponse: Codable {
     let uploadedFiles: [File]
     enum CodingKeys: String, CodingKey {

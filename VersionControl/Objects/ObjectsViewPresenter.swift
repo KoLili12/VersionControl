@@ -32,6 +32,18 @@ final class ObjectsViewPresenter {
         }
     }
     
+    func deleteObject(at index: Int) {
+        Task {
+            do {
+                print(4)
+                let _ = try await objectsService.deleteObject(objectID: getObject(at: index).id)
+                await MainActor.run {
+                    refreshData()
+                }
+            }
+        }
+    }
+    
     func getObject(at index: Int) -> Object {
         return objects[index]
     }
