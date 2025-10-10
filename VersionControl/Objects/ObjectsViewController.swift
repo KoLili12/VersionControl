@@ -127,8 +127,9 @@ extension ObjectsViewController: UITableViewDelegate, UITableViewDataSource {
             
             let editAction = UIAction(title: "Редактировать", 
                                     image: UIImage(systemName: "pencil")) { action in
-                // Здесь будет логика редактирования
                 print("Редактировать объект в секции \(indexPath.section)")
+                let vc = EditObjectViewController()
+                
             }
             
             let deleteAction = UIAction(title: "Удалить", 

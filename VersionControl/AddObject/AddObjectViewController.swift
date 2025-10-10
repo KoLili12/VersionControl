@@ -30,7 +30,13 @@ final class AddObjectViewController: UIViewController {
     private lazy var imagePickerButton: UIButton = {
         let button = UIButton(type: .custom)
         button.setTitle("Выбрать фото", for: .normal)
+        button.setTitleColor(.black, for: .normal)
         button.backgroundColor = UIColor.systemGray6
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        button.layer.cornerRadius = 16
+        button.layer.borderWidth = 2
+        button.layer.borderColor = UIColor.systemGray4.cgColor
+        button.layer.masksToBounds = true
         button.addTarget(self, action: #selector(didTapImagePickerButton), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
@@ -44,13 +50,15 @@ final class AddObjectViewController: UIViewController {
     private lazy var descriptionTextView: UITextView = {
         let textView = UITextView()
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.backgroundColor = UIColor.systemGray6
-        textView.layer.cornerRadius = 12
+        textView.backgroundColor = UIColor.systemBackground
+        textView.layer.cornerRadius = 16
+        textView.layer.borderWidth = 1
+        textView.layer.borderColor = UIColor.systemGray4.cgColor
         textView.font = .systemFont(ofSize: 16)
-        textView.textContainerInset = UIEdgeInsets(top: 16, left: 12, bottom: 16, right: 12)
+        textView.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         textView.isScrollEnabled = false
         textView.text = "Описание объекта"
-        textView.textColor = .systemGray
+        textView.textColor = .placeholderText
         textView.delegate = self
         return textView
     }()
@@ -63,13 +71,30 @@ final class AddObjectViewController: UIViewController {
     private lazy var statusButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Выберите статус", for: .normal)
-        button.setTitleColor(.systemGray, for: .normal)
-        button.backgroundColor = UIColor.systemGray6
-        button.layer.cornerRadius = 12
+        button.setTitleColor(.label, for: .normal)
+        button.backgroundColor = UIColor.systemBackground
+        button.layer.cornerRadius = 16
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.systemGray4.cgColor
         button.contentHorizontalAlignment = .left
-        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 0)
+        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 0)
+        button.titleLabel?.font = .systemFont(ofSize: 16)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(showStatusSelection), for: .touchUpInside)
+        
+        // Добавляем стрелку справа
+        let arrowImageView = UIImageView(image: UIImage(systemName: "chevron.down"))
+        arrowImageView.tintColor = .systemGray
+        arrowImageView.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(arrowImageView)
+        
+        NSLayoutConstraint.activate([
+            arrowImageView.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -20),
+            arrowImageView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            arrowImageView.widthAnchor.constraint(equalToConstant: 12),
+            arrowImageView.heightAnchor.constraint(equalToConstant: 12)
+        ])
+        
         return button
     }()
     
@@ -110,6 +135,7 @@ final class AddObjectViewController: UIViewController {
         setupNavigationBar()
         setupUI()
         setupConstraints()
+        addTapGestureToHideKeyboard()
     }
     
     // MARK: - Setup Methods
@@ -118,6 +144,16 @@ final class AddObjectViewController: UIViewController {
         
         let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancelButtonTapped))
         navigationItem.leftBarButtonItem = cancelButton
+    }
+    
+    private func addTapGestureToHideKeyboard() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func hideKeyboard() {
+        view.endEditing(true)
     }
     
     private func setupUI() {
@@ -150,52 +186,51 @@ final class AddObjectViewController: UIViewController {
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             
             // ImagePickerButton
-            
-            imagePickerButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            imagePickerButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            imagePickerButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            imagePickerButton.heightAnchor.constraint(equalToConstant: 150),
+            imagePickerButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 24),
+            imagePickerButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            imagePickerButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            imagePickerButton.heightAnchor.constraint(equalToConstant: 160),
             
             // Name TextField
-            nameTextField.topAnchor.constraint(equalTo: imagePickerButton.bottomAnchor, constant: 20),
-            nameTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            nameTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            nameTextField.topAnchor.constraint(equalTo: imagePickerButton.bottomAnchor, constant: 24),
+            nameTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            nameTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
             // Description TextView
-            descriptionTextView.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 16),
-            descriptionTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            descriptionTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            descriptionTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 100),
+            descriptionTextView.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 20),
+            descriptionTextView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            descriptionTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            descriptionTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
             
             // Address TextField
-            addressTextField.topAnchor.constraint(equalTo: descriptionTextView.bottomAnchor, constant: 16),
-            addressTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            addressTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            addressTextField.topAnchor.constraint(equalTo: descriptionTextView.bottomAnchor, constant: 20),
+            addressTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            addressTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             
             // Status Button
-            statusButton.topAnchor.constraint(equalTo: addressTextField.bottomAnchor, constant: 16),
-            statusButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            statusButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            statusButton.heightAnchor.constraint(equalToConstant: 44),
+            statusButton.topAnchor.constraint(equalTo: addressTextField.bottomAnchor, constant: 20),
+            statusButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            statusButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            statusButton.heightAnchor.constraint(equalToConstant: 52),
             
             // Start Date Button
-            startDateButton.topAnchor.constraint(equalTo: statusButton.bottomAnchor, constant: 16),
-            startDateButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            startDateButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            startDateButton.heightAnchor.constraint(equalToConstant: 44),
+            startDateButton.topAnchor.constraint(equalTo: statusButton.bottomAnchor, constant: 20),
+            startDateButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            startDateButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            startDateButton.heightAnchor.constraint(equalToConstant: 52),
             
             // End Date Button
-            endDateButton.topAnchor.constraint(equalTo: startDateButton.bottomAnchor, constant: 16),
-            endDateButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            endDateButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            endDateButton.heightAnchor.constraint(equalToConstant: 44),
+            endDateButton.topAnchor.constraint(equalTo: startDateButton.bottomAnchor, constant: 20),
+            endDateButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            endDateButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            endDateButton.heightAnchor.constraint(equalToConstant: 52),
             
             // Save Button
-            saveButton.topAnchor.constraint(equalTo: endDateButton.bottomAnchor, constant: 32),
-            saveButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            saveButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            saveButton.topAnchor.constraint(equalTo: endDateButton.bottomAnchor, constant: 40),
+            saveButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            saveButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             saveButton.heightAnchor.constraint(equalToConstant: 50),
-            saveButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
+            saveButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -30)
         ])
     }
     
@@ -204,19 +239,21 @@ final class AddObjectViewController: UIViewController {
         let textField = UITextField()
         textField.placeholder = placeholder
         textField.borderStyle = .none
-        textField.backgroundColor = UIColor.systemGray6
-        textField.layer.cornerRadius = 12
+        textField.backgroundColor = UIColor.systemBackground
+        textField.layer.cornerRadius = 16
+        textField.layer.borderWidth = 1
+        textField.layer.borderColor = UIColor.systemGray4.cgColor
         textField.font = .systemFont(ofSize: 16)
         
         // Отступы внутри поля
-        textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
+        textField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
         textField.leftViewMode = .always
-        textField.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
+        textField.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 0))
         textField.rightViewMode = .always
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            textField.heightAnchor.constraint(equalToConstant: 44)
+            textField.heightAnchor.constraint(equalToConstant: 52)
         ])
         
         return textField
@@ -225,12 +262,29 @@ final class AddObjectViewController: UIViewController {
     private func createDateButton(title: String) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(title, for: .normal)
-        button.setTitleColor(.systemGray, for: .normal)
-        button.backgroundColor = UIColor.systemGray6
-        button.layer.cornerRadius = 12
+        button.setTitleColor(.label, for: .normal)
+        button.backgroundColor = UIColor.systemBackground
+        button.layer.cornerRadius = 16
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.systemGray4.cgColor
         button.contentHorizontalAlignment = .left
-        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 0)
+        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 0)
+        button.titleLabel?.font = .systemFont(ofSize: 16)
         button.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Добавляем стрелку справа
+        let arrowImageView = UIImageView(image: UIImage(systemName: "chevron.right"))
+        arrowImageView.tintColor = .systemGray
+        arrowImageView.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(arrowImageView)
+        
+        NSLayoutConstraint.activate([
+            arrowImageView.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -20),
+            arrowImageView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            arrowImageView.widthAnchor.constraint(equalToConstant: 10),
+            arrowImageView.heightAnchor.constraint(equalToConstant: 10)
+        ])
+        
         return button
     }
     
@@ -240,6 +294,15 @@ final class AddObjectViewController: UIViewController {
     }
     
     @objc private func saveButtonTapped() {
+        // Анимация нажатия
+        UIView.animate(withDuration: 0.1, animations: {
+            self.saveButton.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+        }) { _ in
+            UIView.animate(withDuration: 0.1) {
+                self.saveButton.transform = CGAffineTransform.identity
+            }
+        }
+        
         guard
             let name = nameTextField.text,
             let description = descriptionTextView.text,
@@ -262,6 +325,15 @@ final class AddObjectViewController: UIViewController {
     }
     
     @objc private func showStatusSelection() {
+        // Анимация нажатия
+        UIView.animate(withDuration: 0.1, animations: {
+            self.statusButton.transform = CGAffineTransform(scaleX: 0.98, y: 0.98)
+        }) { _ in
+            UIView.animate(withDuration: 0.1) {
+                self.statusButton.transform = CGAffineTransform.identity
+            }
+        }
+        
         let alert = UIAlertController(title: "Выберите статус", message: nil, preferredStyle: .actionSheet)
         
         let statusDisplayNames = [
@@ -355,7 +427,7 @@ final class AddObjectViewController: UIViewController {
 // MARK: - UITextViewDelegate
 extension AddObjectViewController: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if textView.textColor == .systemGray {
+        if textView.textColor == .placeholderText {
             textView.text = ""
             textView.textColor = .label
         }
@@ -364,7 +436,7 @@ extension AddObjectViewController: UITextViewDelegate {
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.isEmpty {
             textView.text = "Описание объекта"
-            textView.textColor = .systemGray
+            textView.textColor = .placeholderText
         }
     }
 }

@@ -8,7 +8,6 @@
 import UIKit
 import Kingfisher
 import Combine
-import Foundation
 
 class ObjectViewController: UIViewController {
     
@@ -242,6 +241,7 @@ class ObjectViewController: UIViewController {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle("Смотреть все", for: .normal)
+        button.addTarget(self, action: #selector(didTapViewAllDefectsButton), for: .touchUpInside)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
         button.setTitleColor(.systemBlue, for: .normal)
         return button
@@ -270,8 +270,7 @@ class ObjectViewController: UIViewController {
         return label
     }()
     
-    // Массив для хранения дефектов
-    private var defects: [Defect] = []
+
     
     // MARK: - Initialization
     init(object: Object) {
@@ -295,8 +294,7 @@ class ObjectViewController: UIViewController {
     private func setupBindings() {
         presenter?.$defects
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] defects in
-                self?.defects = Array(defects.prefix(10)) // Показываем только первые 10 дефектов
+            .sink { [weak self] _ in
                 self?.updateDefectsUI()
             }
             .store(in: &cancellables)
@@ -524,7 +522,11 @@ class ObjectViewController: UIViewController {
     }
     
     private func updateDefectsUI() {
-        if defects.isEmpty {
+        guard let presenter = presenter else { return }
+        
+        let displayedDefects = presenter.previewDefects
+        
+        if displayedDefects.isEmpty {
             defectsTableView.isHidden = true
             noDefectsLabel.isHidden = false
         } else {
@@ -536,7 +538,7 @@ class ObjectViewController: UIViewController {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 let cellHeight: CGFloat = 110
-                let tableHeight = CGFloat(self.defects.count) * cellHeight
+                let tableHeight = CGFloat(displayedDefects.count) * cellHeight
                 
                 // Удаляем старое ограничение высоты, если оно есть
                 self.defectsTableView.constraints.forEach { constraint in
@@ -583,12 +585,20 @@ class ObjectViewController: UIViewController {
             placeholder: UIImage(systemName: "photo")
         )
     }
+    
+    // MARK: - @objc
+    
+    @objc private func didTapViewAllDefectsButton() {
+        let vc = DefectsViewController()
+        vc.presenter = presenter
+        navigationController?.pushViewController(vc, animated: true)
+    }
 }
 
 // MARK: - UITableViewDataSource
 extension ObjectViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return defects.count
+        return presenter?.previewDefects.count ?? 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -596,7 +606,11 @@ extension ObjectViewController: UITableViewDataSource {
             return UITableViewCell()
         }
         
-        let defect = defects[indexPath.row]
+        guard let presenter = presenter, indexPath.row < presenter.previewDefects.count else {
+            return cell
+        }
+        
+        let defect = presenter.previewDefects[indexPath.row]
         cell.configure(with: defect)
         return cell
     }
@@ -610,8 +624,13 @@ extension ObjectViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        
+        guard let presenter = presenter, indexPath.row < presenter.previewDefects.count else {
+            return
+        }
+        
         // Здесь можно добавить навигацию к детальному экрану дефекта
-        let defect = defects[indexPath.row]
+        let defect = presenter.previewDefects[indexPath.row]
         print("Selected defect: \(defect.title)")
     }
 }

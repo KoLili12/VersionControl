@@ -15,12 +15,20 @@ final class ObjectViewPresenter {
     @Published private(set) var isLoading = false
     @Published private(set) var error: Error?
     
+    // Метод для получения ограниченного количества дефектов для предварительного просмотра
+    var previewDefects: [Defect] {
+        return Array(defects.prefix(10))
+    }
+    
     func fetchDefects(idObject: Int) {
+        isLoading = true
+        error = nil
+        
         Task {
             do {
-                let defects = try await defectService.fetchDefects(idObject: idObject)
+                let fetchedDefects = try await defectService.fetchDefects(idObject: idObject)
                 await MainActor.run {
-                    self.defects = defects
+                    self.defects = fetchedDefects
                     self.isLoading = false
                 }
             } catch {
